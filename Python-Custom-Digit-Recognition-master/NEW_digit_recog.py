@@ -137,8 +137,8 @@ def proc_user_img(img_file, model):
         cv2.putText(blank_image, str(int(pred[0])), (x,y),cv2.FONT_HERSHEY_SIMPLEX, 3, (255, 0, 0), 5)
 
     plt.imshow(im)
-    cv2.imwrite("original_overlay.png",im) 
-    cv2.imwrite("final_digits.png",blank_image) 
+    cv2.imwrite(img_file+"original_overlay.png",im) 
+    cv2.imwrite(img_file+"final_digits.png",blank_image) 
     cv2.destroyAllWindows()           
 
 
@@ -189,7 +189,7 @@ def load_digits_custom(img_file):
 
 TRAIN_MNIST_IMG = 'digits.png' 
 TRAIN_USER_IMG = 'custom_train_digits.jpg'
-TEST_USER_IMG = 'test_image.png'
+TEST_USER_IMG = '1.jpg'
 
 #digits, labels = load_digits(TRAIN_MNIST_IMG) #original MNIST data (not good detection)
 digits, labels = load_digits_custom(TRAIN_USER_IMG) #my handwritten dataset (better than MNIST on my handwritten digits)
@@ -210,7 +210,8 @@ print('Accuracy: ',accuracy_score(y_test, preds))
 
 model = KNN_MODEL(k = 4)
 model.train(train_digits_data, labels)
-proc_user_img(TEST_USER_IMG, model)
+for x in range(5):
+    proc_user_img(str(x+1)+".jpg", model)
 
 
 
@@ -221,6 +222,7 @@ print('Accuracy: ',accuracy_score(y_test, preds))
 
 model = SVM_MODEL(num_feats = train_digits_data.shape[1])
 model.train(train_digits_data, labels)
-proc_user_img(TEST_USER_IMG, model)
+for x in range(5):
+    proc_user_img(str(x+1)+".jpg", model)
 
 #------------------------------------------------------------------------------
