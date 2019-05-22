@@ -15,12 +15,15 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from sklearn.utils import shuffle
 import time
+from PIL import Image
+import matplotlib.pyplot as plt1; plt1.rcdefaults()
 
 DIGIT_WIDTH = 10 
 DIGIT_HEIGHT = 20
 IMG_HEIGHT = 28
 IMG_WIDTH = 28
 CLASS_N = 10 # 0-9
+mylist=[]
 
 #This method splits the input training image into small cells (of a single digit) and uses these cells as training data.
 #The default training image (MNIST) is a 1000x1000 size image and each digit is of size 10x20. so we divide 1000/10 horizontally and 1000/20 vertically.
@@ -34,7 +37,7 @@ def split2d(img, cell_size, flatten=True):
     return cells
 
 def load_digits(fn):
-    print('loading "%s for training" ...' % fn)
+    #print('loading "%s for training" ...' % fn)
     digits_img = cv2.imread(fn, 0)
     digits = split2d(digits_img, (DIGIT_WIDTH, DIGIT_HEIGHT))
     resized_digits = []
@@ -107,13 +110,13 @@ def get_digits(contours, hierarchy):
 
 
 def proc_user_img(img_file, model):
-    print('loading "%s for digit recognition" ...' % img_file)
+    #print('loading "%s for digit recognition" ...' % img_file)
     im = cv2.imread(img_file)    
     blank_image = np.zeros((im.shape[0],im.shape[1],3), np.uint8)
     blank_image.fill(255)
 
     imgray = cv2.cvtColor(im,cv2.COLOR_BGR2GRAY)
-    plt.imshow(imgray)
+    #plt.imshow(imgray)
     kernel = np.ones((5,5),np.uint8)
     
     ret,thresh = cv2.threshold(imgray,127,255,0)   
@@ -137,10 +140,23 @@ def proc_user_img(img_file, model):
         cv2.putText(im, str(int(pred[0])), (x,y),cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 0, 0), 3)
         cv2.putText(blank_image, str(int(pred[0])), (x,y),cv2.FONT_HERSHEY_SIMPLEX, 3, (255, 0, 0), 5)
 
-    plt.imshow(im)
+    #plt.imshow(im)
     cv2.imwrite(img_file+"original_overlay.png",im) 
     cv2.imwrite(img_file+"final_digits.png",blank_image) 
     cv2.destroyAllWindows()           
+    im = Image.open(img_file+"final_digits.png")
+    im_grey = im.convert('LA') # convert to grayscale
+    width, height = im.size
+
+    total = 0
+    for i in range(0, width):
+        for j in range(0, height):
+            total += im_grey.getpixel((i,j))[0]
+
+    mean = total / (width * height)
+    mylist.append(mean)    
+    #print(mean)
+
 
 
 def get_contour_precedence(contour, cols):
@@ -156,7 +172,7 @@ def load_digits_custom(img_file):
     start_class = 1
     im = cv2.imread(img_file)
     imgray = cv2.cvtColor(im,cv2.COLOR_BGR2GRAY)
-    plt.imshow(imgray)
+    #plt.imshow(imgray)
     kernel = np.ones((5,5),np.uint8)
     
     ret,thresh = cv2.threshold(imgray,127,255,0)   
@@ -224,8 +240,8 @@ TEST_USER_IMG = '1.jpg'
 #digits, labels = load_digits(TRAIN_MNIST_IMG) #original MNIST data (not good detection)
 digits, labels = load_digits_custom(TRAIN_USER_IMG) #my handwritten dataset (better than MNIST on my handwritten digits)
 
-print('train data shape',digits.shape)
-print('test data shape',labels.shape)
+#print('train data shape',digits.shape)
+#print('test data shape',labels.shape)
 
 digits, labels = shuffle(digits, labels, random_state=256)
 train_digits_data = pixels_to_hog_20(digits)
@@ -236,23 +252,20 @@ X_train, X_test, y_train, y_test = train_test_split(train_digits_data, labels, t
 model = KNN_MODEL(k = 3)
 model.train(X_train, y_train)
 preds = model.predict(X_test)
-print('Accuracy: ',accuracy_score(y_test, preds))
+#print('Accuracy: ',accuracy_score(y_test, preds))
 
 model = KNN_MODEL(k = 4)
 model.train(train_digits_data, labels)
 for x in range(5):
     proc_user_img(str(x+1)+".jpg", model)
 
+objects = ('1','2','3','4','5')
+y_pos = np.arange(len(objects))
+performance = [mylist[0],mylist[1],mylist[2],mylist[3],mylist[4]]
 
-
-model = SVM_MODEL(num_feats = train_digits_data.shape[1])
-model.train(X_train, y_train)
-preds = model.predict(X_test)
-print('Accuracy: ',accuracy_score(y_test, preds))
-
-model = SVM_MODEL(num_feats = train_digits_data.shape[1])
-model.train(train_digits_data, labels)
-for x in range(5):
-    proc_user_img(str(x+1)+".jpg", model)
-
+plt1.bar(y_pos, performance, align='center', alpha=0.5)
+plt1.xticks(y_pos, objects)
+plt1.ylabel('Mean')
+plt1.title('Histogram')
+plt1.show()
 #------------------------------------------------------------------------------
